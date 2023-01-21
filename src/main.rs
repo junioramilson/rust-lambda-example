@@ -26,3 +26,27 @@ async fn main() -> Result<(), Error> {
 
     run(service_fn(handler)).await
 }
+
+#[cfg(test)]
+mod tests {
+    use lambda_http::{http::{self, StatusCode}, aws_lambda_events::serde_json::json, IntoResponse, Body};
+
+    use crate::handler;
+   
+    #[tokio::test]
+    async fn test_handler() {
+        let request = http::Request::builder()
+            .header("Content-Type", "application/json")
+            .body(Body::Empty)
+            .expect("Failed to create request");
+
+        let expected_resp = json!({ "message": "test" }).into_response();
+        let response = handler(request)
+            .await
+            .expect("Expected Ok() value")
+            .into_response().await;
+        
+        assert_eq!(response.body(), expected_resp.await.body());
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+}
